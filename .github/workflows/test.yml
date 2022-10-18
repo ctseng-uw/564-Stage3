@@ -9,3 +9,10 @@ jobs:
     - uses: actions/checkout@v3
     - run: make testbuf
     - run: ./testbuf
+
+  unittest:
+    runs-on: ubuntu-22.04 
+    steps:
+    - uses: actions/checkout@v3
+    - run: make -f unittest.mk unittest
+    - run: ./unittest
