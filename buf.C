@@ -68,12 +68,36 @@ BufMgr::~BufMgr() {
 
 const Status BufMgr::allocBuf(int & frame) 
 {
+    int steps = 0;
+    do {
+      advanceClock();
+      ++steps;
+      BufDesc* bufDesc = &bufTable[clockHand];
+      if (!bufDesc->valid) {
+        break;
+      }
+      if (bufDesc->refbit) {
+        bufDesc->refbit = false;
+        continue;
+      }
+      if (bufDesc->pinCnt) {
+        continue;
+      }
+      // evict this page
+      ASSERT(hashTable->remove(FILECASTHACK(bufDesc->file), bufDesc->pageNo) == OK);
+      if (bufDesc->dirty) {
+        ASSERT(bufDesc->file->writePage(bufDesc->pageNo, &bufPool[clockHand]) == OK);
+      }
+      break;
+    } while (steps != numBufs * 2);
 
-
-
-
-
-
+    if (steps == numBufs * 2) {
+      return BUFFEREXCEEDED;
+    }
+    
+    frame = clockHand;
+    bufTable[frame].Clear();
+    return OK;
 }
 
 	
