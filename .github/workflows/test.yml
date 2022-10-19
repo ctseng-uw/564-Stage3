@@ -3,9 +3,22 @@ name: Test
 on: [pull_request]
 
 jobs:
-  testbuf:
-    runs-on: ubuntu-22.04 
+  compile:
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - run: make testbuf
-    - run: ./testbuf
+      - uses: actions/checkout@v3
+      - run: make
+      - uses: actions/cache@v3
+        with:
+          path: testbuf
+          key: testbuf-${{ github.run_id }}
+
+  testbuf:
+    runs-on: ubuntu-22.04
+    needs: compile
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: testbuf
+          key: testbuf-${{ github.run_id }}
+      - run: ./testbuf
