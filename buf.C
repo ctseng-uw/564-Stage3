@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <stdio.h>
+#include <climits>
 #include "page.h"
 #include "buf.h"
 
@@ -14,6 +15,8 @@
                        exit(1); \
 		     } \
                    }
+
+#define FILECASTHACK(f) (File *)((long)(f) % INT_MAX)
 
 //----------------------------------------
 // Constructor of the class BufMgr
@@ -110,13 +113,13 @@ const Status BufMgr::disposePage(File* file, const int pageNo)
     // see if it is in the buffer pool
     Status status = OK;
     int frameNo = 0;
-    status = hashTable->lookup(file, pageNo, frameNo);
+    status = hashTable->lookup(FILECASTHACK(file), pageNo, frameNo);
     if (status == OK)
     {
         // clear the page
         bufTable[frameNo].Clear();
     }
-    status = hashTable->remove(file, pageNo);
+    status = hashTable->remove(FILECASTHACK(file), pageNo);
 
     // deallocate it in the file
     return file->disposePage(pageNo);
@@ -145,7 +148,7 @@ const Status BufMgr::flushFile(const File* file)
 	tmpbuf->dirty = false;
       }
 
-      hashTable->remove(file,tmpbuf->pageNo);
+      hashTable->remove(FILECASTHACK(file),tmpbuf->pageNo);
 
       tmpbuf->file = NULL;
       tmpbuf->pageNo = -1;
