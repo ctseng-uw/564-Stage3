@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <iostream>
 #include <stdio.h>
-#include <climits>
 #include "page.h"
 #include "buf.h"
 
@@ -15,8 +14,6 @@
                        exit(1); \
 		     } \
                    }
-
-#define FILECASTHACK(f) (File *)((long)(f) % INT_MAX)
 
 //----------------------------------------
 // Constructor of the class BufMgr
@@ -95,9 +92,6 @@ const Status BufMgr::allocBuf(int & frame)
       return BUFFEREXCEEDED;
     }
     
-    frame = clockHand;
-    bufTable[frame].Clear();
-    return OK;
 }
 
 	
@@ -114,11 +108,26 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 const Status BufMgr::unPinPage(File* file, const int PageNo, 
 			       const bool dirty) 
 {
+    int frameNo = 0;
 
+    // use hashtable to look for the frame number
+    if (hashTable->lookup(file, PageNo, frameNo) != OK){
+        return HASHNOTFOUND;
+    }
 
+    // check the pinCount of the frame
+    if (bufTable[frameNo].pinCnt == 0){
+        return PAGENOTPINNED;
+    }
 
+    bufTable[frameNo].pinCnt -= 1 ;
 
+    // set dirty bit
+    if (dirty){
+        bufTable[frameNo].dirty = true;
+    }
 
+    return OK;
 }
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
@@ -137,13 +146,13 @@ const Status BufMgr::disposePage(File* file, const int pageNo)
     // see if it is in the buffer pool
     Status status = OK;
     int frameNo = 0;
-    status = hashTable->lookup(FILECASTHACK(file), pageNo, frameNo);
+    status = hashTable->lookup(file, pageNo, frameNo);
     if (status == OK)
     {
         // clear the page
         bufTable[frameNo].Clear();
     }
-    status = hashTable->remove(FILECASTHACK(file), pageNo);
+    status = hashTable->remove(file, pageNo);
 
     // deallocate it in the file
     return file->disposePage(pageNo);
@@ -172,7 +181,7 @@ const Status BufMgr::flushFile(const File* file)
 	tmpbuf->dirty = false;
       }
 
-      hashTable->remove(FILECASTHACK(file),tmpbuf->pageNo);
+      hashTable->remove(file,tmpbuf->pageNo);
 
       tmpbuf->file = NULL;
       tmpbuf->pageNo = -1;
