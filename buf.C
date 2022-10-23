@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <stdio.h>
+#include <climits>
 #include "page.h"
 #include "buf.h"
 
@@ -14,6 +15,8 @@
                        exit(1); \
 		     } \
                    }
+
+#define FILECASTHACK(f) (File *)((long)(f) % INT_MAX)
 
 //----------------------------------------
 // Constructor of the class BufMgr
@@ -91,7 +94,10 @@ const Status BufMgr::allocBuf(int & frame)
     if (steps == numBufs * 2) {
       return BUFFEREXCEEDED;
     }
-    
+
+    frame = clockHand;
+    bufTable[frame].Clear();
+    return OK;
 }
 
 	
@@ -101,7 +107,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 
 
 
-
+  return OK;
 }
 
 
@@ -132,13 +138,30 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
+  int frameNo = 0;
 
+  // create new page
+  if (file->allocatePage(pageNo) != OK){
+    return UNIXERR;
+  }
 
+  // allocate buffer frame
+  if (allocBuf(frameNo) == BUFFEREXCEEDED){
+    return BUFFEREXCEEDED;
+  }
 
+  // insert file information into hashtable
+  if (hashTable->insert(file, pageNo, frameNo) == HASHTBLERROR){
+    return HASHTBLERROR;
+  }
 
+  // update information into the buftable
+  bufTable[frameNo].Set(file, pageNo);
 
+  // return a pointer to the buffer frame
+  page = &bufPool[frameNo];
 
-
+  return OK;
 }
 
 const Status BufMgr::disposePage(File* file, const int pageNo) 
@@ -146,13 +169,13 @@ const Status BufMgr::disposePage(File* file, const int pageNo)
     // see if it is in the buffer pool
     Status status = OK;
     int frameNo = 0;
-    status = hashTable->lookup(file, pageNo, frameNo);
+    status = hashTable->lookup(FILECASTHACK(file), pageNo, frameNo);
     if (status == OK)
     {
         // clear the page
         bufTable[frameNo].Clear();
     }
-    status = hashTable->remove(file, pageNo);
+    status = hashTable->remove(FILECASTHACK(file), pageNo);
 
     // deallocate it in the file
     return file->disposePage(pageNo);
@@ -181,7 +204,7 @@ const Status BufMgr::flushFile(const File* file)
 	tmpbuf->dirty = false;
       }
 
-      hashTable->remove(file,tmpbuf->pageNo);
+      hashTable->remove(FILECASTHACK(file),tmpbuf->pageNo);
 
       tmpbuf->file = NULL;
       tmpbuf->pageNo = -1;
