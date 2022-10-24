@@ -117,7 +117,7 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
     int frameNo = 0;
 
     // use hashtable to look for the frame number
-    if (hashTable->lookup(file, PageNo, frameNo) != OK){
+    if (hashTable->lookup(FILECASTHACK(file), PageNo, frameNo) != OK){
         return HASHNOTFOUND;
     }
 
@@ -129,9 +129,7 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
     bufTable[frameNo].pinCnt -= 1 ;
 
     // set dirty bit
-    if (dirty){
-        bufTable[frameNo].dirty = true;
-    }
+    bufTable[frameNo].dirty = dirty;
 
     return OK;
 }
@@ -151,7 +149,7 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)
   }
 
   // insert file information into hashtable
-  if (hashTable->insert(file, pageNo, frameNo) == HASHTBLERROR){
+  if (hashTable->insert(FILECASTHACK(file), pageNo, frameNo) == HASHTBLERROR){
     return HASHTBLERROR;
   }
 
