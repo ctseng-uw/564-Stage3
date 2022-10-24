@@ -126,11 +126,12 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
         return PAGENOTPINNED;
     }
 
-    bufTable[frameNo].pinCnt -= 1 ;
+    bufTable[frameNo].pinCnt -= 1;
 
     // set dirty bit
-    bufTable[frameNo].dirty = dirty;
-
+    if (dirty){
+      bufTable[frameNo].dirty = dirty;
+    }
     return OK;
 }
 
