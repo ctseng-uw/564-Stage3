@@ -103,11 +103,33 @@ const Status BufMgr::allocBuf(int & frame)
 	
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 {
+    Status status = OK;
+    int frameNo = 0;
+    BufDesc* tmpbuf = &bufTable[frameNo];
 
-
-
-
-
+    status = hashTable->lookup(FILECASTHACK(file), PageNo, frameNo);
+    if (status == HASHNOTFOUND) // check if page is in buffer pool
+    {
+      allocBuf(frameNo); // allocate buffer frame
+      if (file->readPage(PageNo, page) == UNIXERR) // read page from disk into buffer pool frame
+      {
+        return UNIXERR;
+      }
+      if (hashtable->insert(FILECASTHACK(file), PageNo, frameNo) == HASHTBLERROR) // insert page into hashtable
+      {
+        return HASHTBLERROR;
+      }
+      bufTable[frameNo].Set(file, PageNo); // invoke Set() to set up frame properly
+    }
+    if (status == OK) // page is in buffer pool
+    {
+      // set refbit, increment pinCnt
+      tmpbuf->refbit = true;
+      tmpbuf->pinCnt++;
+    }
+    // return a pointer to frame containing page via page parameter
+    page = &bufPool[frameNo];
+    return OK;
 }
 
 
