@@ -94,7 +94,7 @@ const Status BufMgr::allocBuf(int & frame)
     if (steps == numBufs * 2) {
       return BUFFEREXCEEDED;
     }
-    
+
     frame = clockHand;
     bufTable[frame].Clear();
     return OK;
@@ -107,51 +107,63 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
     int frameNo = 0;
     BufDesc* tmpbuf = &bufTable[frameNo];
 
-    status = hashTable->lookup(FILECASTHACK(file), PageNo, frameNo);
-    if (status == HASHNOTFOUND) // check if page is in buffer pool
-    {
-      allocBuf(frameNo); // allocate buffer frame
-      if (file->readPage(PageNo, page) == UNIXERR) // read page from disk into buffer pool frame
-      {
-        return UNIXERR;
-      }
-      if (hashtable->insert(FILECASTHACK(file), PageNo, frameNo) == HASHTBLERROR) // insert page into hashtable
-      {
-        return HASHTBLERROR;
-      }
-      bufTable[frameNo].Set(file, PageNo); // invoke Set() to set up frame properly
-    }
-    if (status == OK) // page is in buffer pool
-    {
-      // set refbit, increment pinCnt
-      tmpbuf->refbit = true;
-      tmpbuf->pinCnt++;
-    }
-    // return a pointer to frame containing page via page parameter
-    page = &bufPool[frameNo];
-    return OK;
+
+
+
+  return OK;
 }
 
 
 const Status BufMgr::unPinPage(File* file, const int PageNo, 
 			       const bool dirty) 
 {
+    int frameNo = 0;
 
+    // use hashtable to look for the frame number
+    if (hashTable->lookup(FILECASTHACK(file), PageNo, frameNo) != OK){
+        return HASHNOTFOUND;
+    }
 
+    // check the pinCount of the frame
+    if (bufTable[frameNo].pinCnt == 0){
+        return PAGENOTPINNED;
+    }
 
+    bufTable[frameNo].pinCnt -= 1;
 
-
+    // set dirty bit
+    if (dirty){
+      bufTable[frameNo].dirty = dirty;
+    }
+    return OK;
 }
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
+  int frameNo = 0;
 
+  // create new page
+  if (file->allocatePage(pageNo) != OK){
+    return UNIXERR;
+  }
 
+  // allocate buffer frame
+  if (allocBuf(frameNo) == BUFFEREXCEEDED){
+    return BUFFEREXCEEDED;
+  }
 
+  // insert file information into hashtable
+  if (hashTable->insert(FILECASTHACK(file), pageNo, frameNo) == HASHTBLERROR){
+    return HASHTBLERROR;
+  }
 
+  // update information into the buftable
+  bufTable[frameNo].Set(file, pageNo);
 
+  // return a pointer to the buffer frame
+  page = &bufPool[frameNo];
 
-
+  return OK;
 }
 
 const Status BufMgr::disposePage(File* file, const int pageNo) 
