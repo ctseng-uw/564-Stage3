@@ -109,7 +109,10 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
     status = hashTable->lookup(FILECASTHACK(file), PageNo, frameNo);
     if (status == HASHNOTFOUND) // check if page is in buffer pool
     {
-      allocBuf(frameNo); // allocate buffer frame
+      if (allocBuf(frameNo) == BUFFEREXCEEDED) // allocate buffer frame
+      {
+        return BUFFEREXCEEDED;
+      }
       if (file->readPage(PageNo, page) == UNIXERR) // read page from disk into buffer pool frame
       {
         return UNIXERR;
