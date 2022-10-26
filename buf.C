@@ -113,7 +113,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
       {
         return BUFFEREXCEEDED;
       }
-      if (file->readPage(PageNo, page) == UNIXERR) // read page from disk into buffer pool frame
+      if (file->readPage(PageNo, &bufPool[frameNo]) == UNIXERR) // read page from disk into buffer pool frame
       {
         return UNIXERR;
       }
