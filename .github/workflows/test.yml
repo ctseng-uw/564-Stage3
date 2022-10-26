@@ -21,4 +21,4 @@ jobs:
         with:
           path: testbuf
           key: testbuf-${{ github.run_id }}
-      - run: ./testbuf
+      - run: ./testbuf | grep "Passed all tests."
