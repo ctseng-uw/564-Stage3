@@ -73,39 +73,42 @@ BufMgr::~BufMgr()
 const Status BufMgr::allocBuf(int& frame)
 {
     int steps = 0;
+    // prerequisite: clockHand points to the most recently allocated frameNo
     do
     {
         advanceClock();
         ++steps;
         BufDesc* bufDesc = &bufTable[clockHand];
-        if (!bufDesc->valid)
+        if (!bufDesc->valid) // The frame is not valid (empty) break and return
         {
             break;
         }
-        if (bufDesc->refbit)
+        if (bufDesc->refbit) // The frame is recently used, continue and check the next one
         {
             bufDesc->refbit = false;
             continue;
         }
-        if (bufDesc->pinCnt)
+        if (bufDesc->pinCnt) // The frame is pin, continue and check the next one
         {
             continue;
         }
-        // evict this page
+        // When the control flow flows here, this frame is not pin, not recently used, and not empty, evict this page
         ASSERT(hashTable->remove(FILECASTHACK(bufDesc->file), bufDesc->pageNo) == OK);
-        if (bufDesc->dirty)
+        if (bufDesc->dirty) // Write to disk if it's dirty
         {
             ASSERT(bufDesc->file->writePage(bufDesc->pageNo, &bufPool[clockHand]) == OK);
         }
         break;
-    } while (steps != numBufs * 2);
+    } while (steps != numBufs * 2); // loop until we circle the clock twice
 
+    // If we circle the clock twice, all the frames are PIN and we have to return BUFFEREXCEEDED
     if (steps == numBufs * 2)
     {
         return BUFFEREXCEEDED;
     }
 
     frame = clockHand;
+    // Reset the frame before returning
     bufTable[frame].Clear();
     return OK;
 }
