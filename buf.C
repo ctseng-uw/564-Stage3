@@ -90,7 +90,7 @@ const Status BufMgr::allocBuf(int& frame)
         }
         if (bufDesc->pinCnt) // The frame is pin, continue and check the next one
         {
-            continue;
+            continue;   
         }
         // When the control flow flows here, this frame is not pin, not recently used, and not empty, evict this page
         ASSERT(hashTable->remove(FILECASTHACK(bufDesc->file), bufDesc->pageNo) == OK);
