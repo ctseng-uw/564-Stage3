@@ -13,8 +13,6 @@ jobs:
         with:
           style: file
           tidy-checks: "-*"
-          version: "14"
-          lines-changed-only: true
           thread-comments: true
       - run: make
       - uses: actions/cache@v3
