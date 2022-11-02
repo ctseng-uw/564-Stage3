@@ -7,6 +7,14 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: cpp-linter/cpp-linter-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: file
+          tidy-checks: "-*"
+          version: "14"
+          lines-changed-only: true
       - run: make
       - uses: actions/cache@v3
         with:
