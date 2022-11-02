@@ -130,7 +130,7 @@ const Status BufMgr::allocBuf(int& frame)
 }
 
 /*
-  @Input: pointer to file (File* file), page number of the required page (const int PageNo), 
+  @Input: pointer to file (File* file), page number of the required page (const int PageNo),
   and a reference of pointer to a page in buffer pool (Page*& page).
 
   @function : read a page of a file.
@@ -172,7 +172,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 }
 
 /*
-  @Input: pointer to file (File* file), page number of the required page (const int PageNo), 
+  @Input: pointer to file (File* file), page number of the required page (const int PageNo),
   and whether the page is made dirty (const bool dirty).
 
   @function : decrease the pin count of the required page.
@@ -206,7 +206,7 @@ const Status BufMgr::unPinPage(File* file, const int PageNo, const bool dirty)
 }
 
 /*
-  @Input: pointer to file (File* file), reference of the page number of a page (int& pageNo), 
+  @Input: pointer to file (File* file), reference of the page number of a page (int& pageNo),
   and reference of pointer to a page (Page*& page).
 
   @function : allocate a new page to a file and find a frame in the buffer for that page.
