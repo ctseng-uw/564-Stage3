@@ -1,3 +1,11 @@
+/*
+  CS564 project 3
+  Team member:
+  Christopher Nguyen, 9079523065
+  Cody Tseng, 9083461120
+  Cheng-Wei lu, 9082348963
+*/
+
 #include <errno.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -70,6 +78,14 @@ BufMgr::~BufMgr()
     delete[] bufPool;
 }
 
+/*
+  @Input: reference of frame number (int& frame)
+
+  @function : allocate a frame in the buffer manager
+
+  @Output: error or success message. Frame number stored in frame variable
+*/
+
 const Status BufMgr::allocBuf(int& frame)
 {
     int steps = 0;
@@ -113,6 +129,14 @@ const Status BufMgr::allocBuf(int& frame)
     return OK;
 }
 
+/*
+  @Input: pointer to file (File* file), page number of the required page (const int PageNo), 
+  and a reference of pointer to a page in buffer pool (Page*& page).
+
+  @function : read a page of a file.
+
+  @Output: error or success message. Page pointer stored in the page variable.
+*/
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 {
     Status status = OK;
@@ -147,6 +171,14 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
     return OK;
 }
 
+/*
+  @Input: pointer to file (File* file), page number of the required page (const int PageNo), 
+  and whether the page is made dirty (const bool dirty).
+
+  @function : decrease the pin count of the required page.
+
+  @Output: Error or success message.
+*/
 const Status BufMgr::unPinPage(File* file, const int PageNo, const bool dirty)
 {
     int frameNo = 0;
@@ -172,6 +204,15 @@ const Status BufMgr::unPinPage(File* file, const int PageNo, const bool dirty)
     }
     return OK;
 }
+
+/*
+  @Input: pointer to file (File* file), reference of the page number of a page (int& pageNo), 
+  and reference of pointer to a page (Page*& page).
+
+  @function : allocate a new page to a file and find a frame in the buffer for that page.
+
+  @Output: error or success message. Page number stored in pageNo, and pointer to the page stored in page variable.
+*/
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)
 {
